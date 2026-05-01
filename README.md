@@ -1,6 +1,21 @@
 # Plan Maestro - Sistema Electoral Digital Auditado y Distribuido (Backend Python)
 
-Este directorio contiene el diseño integral de un sistema electoral digital con enfoque de producto y arquitectura auditable.
+Este repositorio contiene el diseno integral de un sistema electoral digital con enfoque de producto, arquitectura auditable y construccion abierta por la comunidad.
+
+## Proyecto abierto para la transparencia electoral
+
+Este proyecto nace con una premisa central: la transparencia electoral mejora cuando la arquitectura, las reglas del sistema y los mecanismos de auditoria pueden ser revisados publicamente.
+
+Tambien parte de una necesidad concreta: ante los cuestionamientos, denuncias de irregularidades y preocupaciones publicas que han rodeado las ultimas 3 elecciones en el Peru, este sistema busca proponer una alternativa auditable, transparente y tecnicamente verificable.
+
+Por eso, este repositorio se plantea como una iniciativa abierta para:
+
+- Disenar tecnologia electoral verificable por terceros.
+- Permitir escrutinio tecnico y ciudadano de la arquitectura.
+- Facilitar colaboracion de desarrolladores, auditores, academia y sociedad civil.
+- Reducir cajas negras en sistemas criticos para la democracia.
+
+El objetivo no es solo construir software funcional, sino construir confianza publica mediante apertura, trazabilidad y revisabilidad.
 
 ## Objetivo del plan
 
@@ -12,6 +27,8 @@ Definir un backend en Python (FastAPI) que cumpla con:
 - Permitir auditoria publica en tiempo real.
 - Hacer el fraude extremadamente detectable.
 - Garantizar alta disponibilidad y escalado horizontal para soportar jornada nacional sin degradacion critica.
+
+Y que ademas pueda ser desarrollado, auditado y mejorado por una comunidad abierta interesada en la integridad del proceso electoral.
 
 Y que ademas soporte operacion electoral completa:
 
@@ -57,6 +74,18 @@ Y que ademas soporte operacion electoral completa:
 
 Confiar en reglas verificables, no en operadores individuales.
 
+## Principio de apertura
+
+La transparencia del sistema tambien depende de la transparencia de su construccion.
+
+Por ello, este proyecto debe favorecer:
+
+- Documentacion publica de decisiones tecnicas.
+- Protocolos auditables y entendibles.
+- Especificaciones abiertas para integraciones y validacion.
+- Revision comunitaria de riesgos, reglas y controles.
+- Trazabilidad de cambios en arquitectura, seguridad y operacion.
+
 ## Principio de disponibilidad
 
 La arquitectura debe poder escalar horizontalmente para atender simultaneamente:
@@ -93,6 +122,34 @@ Ejes transversales agregados:
 2. Motor de reglas antifraude en tiempo real (riesgo por mesa/acta).
 3. Modelo CQRS para lectura masiva de resultados preliminares.
 4. Runbook de investigacion y judicializacion de incidentes.
+
+## Comunidad y colaboracion
+
+Este repositorio busca recibir aportes de:
+
+- Ingenieros de software y seguridad.
+- Especialistas en sistemas electorales.
+- Auditores tecnicos y peritos forenses.
+- Organizaciones civiles y academia.
+- Ciudadania interesada en vigilancia tecnologica y transparencia.
+
+Areas naturales de contribucion:
+
+- Arquitectura y escalabilidad.
+- Criptografia, firma y cadena de custodia.
+- UX operativa para mesas electorales.
+- Accesibilidad y usabilidad multi-dispositivo.
+- Auditoria publica, validadores y metricas de confianza.
+- Modelos de datos, gobernanza y protocolos abiertos.
+
+Toda mejora propuesta debe fortalecer al menos uno de estos atributos:
+
+- transparencia
+- auditabilidad
+- resiliencia
+- integridad
+- usabilidad
+- escalabilidad
 
 ## Alcance funcional complementario
 
