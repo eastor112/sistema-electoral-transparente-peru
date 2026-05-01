@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: install install-dev run test lint typecheck format
+.PHONY: install install-dev run test lint typecheck format hooks
 
 install:
 	$(PYTHON) -m pip install -r requirements.txt
@@ -22,3 +22,8 @@ typecheck:
 
 format:
 	PYTHONPATH=src ruff check src tests --fix
+
+hooks:
+	git config core.hooksPath .githooks
+	chmod +x .githooks/pre-push
+	@echo "Git hooks enabled from .githooks/"

@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+should_run_checks=false
+
+# Read refs from stdin as provided by git pre-push hook.
+# Format: <local ref> <local sha1> <remote ref> <remote sha1>
+while read -r _local_ref _local_sha remote_ref _remote_sha; do
+  if [[ "$remote_ref" == "refs/heads/main" || "$remote_ref" == "refs/heads/develop" ]]; then
+    should_run_checks=true
+    break
+  fi
+done
+
+if [[ "$should_run_checks" != "true" ]]; then
+  exit 0
+fi
+
+echo "pre-push: branch protegida detectada (main/develop). Ejecutando checks..."
+
+if [[ -x ".venv/bin/python" ]]; then
+  export PATH="$PWD/.venv/bin:$PATH"
+fi
+
+make test
+make lint
+make typecheck
+
+echo "pre-push: checks OK. Push permitido."

@@ -153,6 +153,20 @@ Toda mejora propuesta debe fortalecer al menos uno de estos atributos:
 - usabilidad
 - escalabilidad
 
+## Calidad antes de push
+
+Para estandarizar contribuciones, este repositorio incluye un hook `pre-push` que ejecuta:
+
+- `make test`
+- `make lint`
+- `make typecheck`
+
+solo cuando se intenta hacer push a `main` o `develop`.
+
+Activacion local (una vez por clon):
+
+`make hooks`
+
 ## Alcance funcional complementario
 
 1. Pre-jornada (administracion)
