@@ -70,6 +70,8 @@ Y que ademas soporte operacion electoral completa:
 - Mensajeria para broadcast (NATS o Kafka)
 - OpenTelemetry + Prometheus + Grafana + Loki
 
+Base de datos principal confirmada para este proyecto: PostgreSQL.
+
 ## Principio rector
 
 Confiar en reglas verificables, no en operadores individuales.

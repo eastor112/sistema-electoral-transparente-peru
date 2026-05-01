@@ -1,0 +1,1 @@
+"""Election System backend package."""

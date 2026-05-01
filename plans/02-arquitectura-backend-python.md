@@ -169,6 +169,24 @@ Responsabilidades:
 - Publicar score interno y razones explicativas auditables.
 - Disparar revision prioritaria sobre mesas con score bajo o caidas abruptas.
 
+### 2.17 Servicio de Autenticacion e Identidad
+
+Responsabilidades:
+
+- Gestionar login, refresh y contexto de identidad de actores del sistema.
+- Integrar validacion de identidad (DNI/biometria) segun proveedor oficial.
+- Emitir y validar tokens de sesion con politicas de expiracion/rotacion.
+- Registrar eventos de autenticacion para auditoria y trazabilidad.
+
+### 2.18 Servicio de Notificaciones
+
+Responsabilidades:
+
+- Emitir notificaciones operativas para miembros, fiscalizadores y autoridades.
+- Publicar alertas de riesgo, incidencias y estado de sincronizacion.
+- Exponer canales en tiempo real para panel interno y vistas publicas permitidas.
+- Mantener entrega idempotente y con trazabilidad de recepcion.
+
 ## 3. Arquitectura en capas (Clean + Hexagonal)
 
 - Capa API: routers, DTOs, validacion de entrada.
@@ -320,6 +338,14 @@ Para cliente web multi-dispositivo:
 - `POST /v1/sync/lotes`
 - `GET /v1/mesas/{mesa_id}/fiabilidad`
 - `GET /v1/admin/mesas/fiabilidad`
+
+### 5.14 Autenticacion y notificaciones
+
+- `POST /v1/auth/login`
+- `POST /v1/auth/refresh`
+- `GET /v1/auth/me`
+- `GET /v1/notificaciones`
+- `POST /v1/notificaciones/broadcast`
 
 ## 6. Reglas de consistencia critica
 
