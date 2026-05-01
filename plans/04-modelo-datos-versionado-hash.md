@@ -45,7 +45,15 @@ Campos:
 - `version`
 - `hash_acta`
 - `imagen_url`
-- `hash_imagen`
+- `hash_imagen_raw`
+- `hash_imagen_normalizada`
+- `mime_type`
+- `byte_size`
+- `captured_at_device`
+- `storage_object_version`
+- `manifest_hash`
+- `manifest_signature`
+- `tsa_token_ref`
 - `metadata` (resolucion, exif permitido, checksum cliente)
 
 ### 1.5 EventoAuditoria
@@ -235,9 +243,16 @@ Campos:
 ```json
 {
   "acta_id": "CAJ-01234",
+  "version": 1,
   "hash_acta": "...",
   "imagen_url": "s3://bucket/2026/CAJ-01234-v1.jpg",
-  "hash_imagen": "..."
+  "hash_imagen_raw": "...",
+  "hash_imagen_normalizada": "...",
+  "mime_type": "image/jpeg",
+  "byte_size": 3840021,
+  "manifest_hash": "...",
+  "manifest_signature": "base64:...",
+  "tsa_token_ref": "tsa:2026-05-01:abc123"
 }
 ```
 
@@ -271,6 +286,10 @@ Reglas:
 - `unique(sworn_statement_id, actor_id, role_type)` para firmas de declaracion jurada
 - `check(score between 1 and 10)` para fiabilidad de mesa
 - `check(ultimo_evento_confirmado_seq <= ultimo_evento_local_seq)` para sincronizacion
+- `unique(acta_id, version, hash_imagen_raw)` para evitar duplicidad exacta de evidencia
+- `check(byte_size > 0)` para evidencia imagen
+- `check(mime_type in ('image/jpeg','image/png','image/webp'))` para formatos permitidos
+- `not null` en `manifest_hash`, `manifest_signature`, `tsa_token_ref` para evidencia imagen valida
 
 ## 5. Estrategia de consultas
 
@@ -282,6 +301,10 @@ Reglas:
 
 - No registrar firma si hash de version no coincide.
 - No aceptar evidencia imagen con hash_acta distinto al publicado.
+- No aceptar evidencia imagen si falla verificacion de `manifest_signature`.
+- No aceptar evidencia imagen sin sello de tiempo valido (`tsa_token_ref`).
+- No aceptar evidencia imagen si `hash_imagen_raw` recalculado no coincide con el declarado.
+- No aceptar evidencia imagen si falta versionado de objeto (`storage_object_version`).
 - No permitir PUBLICADA sin al menos 3 firmas validas.
 - No permitir cierre de incidente sin evidencia de analisis y resolucion.
 - No permitir transiciones de estado sin evento de custodia asociado.

@@ -124,6 +124,7 @@ Ejes transversales agregados:
 2. Motor de reglas antifraude en tiempo real (riesgo por mesa/acta).
 3. Modelo CQRS para lectura masiva de resultados preliminares.
 4. Runbook de investigacion y judicializacion de incidentes.
+5. Integridad criptografica de imagenes de acta (doble hash, manifiesto firmado, sello de tiempo y storage inmutable).
 
 ## Comunidad y colaboracion
 

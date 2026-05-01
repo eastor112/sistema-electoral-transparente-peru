@@ -51,6 +51,40 @@ Para versiones de acta:
 
 `acta_hash = SHA256(version_payload_canonico + firmas_ordenadas)`
 
+### 2.4 Integridad criptografica de imagenes de acta
+
+Objetivo: demostrar que la imagen publicada corresponde al documento capturado, que no fue alterada y que su vinculacion al acta es verificable por terceros.
+
+Estrategia base:
+
+- Calcular dos huellas por imagen:
+  - `hash_imagen_raw = SHA256(bytes_originales)`
+  - `hash_imagen_normalizada = SHA256(bytes_normalizados_sin_exif_variable)`
+- Construir un manifiesto canonico de carga con: `acta_id`, `version`, `hash_acta`, `hash_imagen_raw`, `hash_imagen_normalizada`, `mime_type`, `byte_size`, `captured_at_device`, `device_id`.
+- Firmar el manifiesto con clave efimera de sesion del actor que realiza la carga.
+- Sellar tiempo del manifiesto (TSA RFC3161 o servicio equivalente) y guardar `tsa_token` verificable.
+- Persistir el objeto en storage con versionado y WORM/immutability lock por ventana legal.
+- Registrar evento de custodia enlazado al hash del manifiesto para continuidad forense.
+
+Vinculacion con el acta:
+
+- Toda evidencia de imagen debe referenciar exactamente `acta_id`, `version` y `hash_acta` publicados.
+- Si `hash_acta` cambia por correccion de version, la evidencia previa queda historica y no se reasigna.
+- No se permite publicar/cerrar acta sin al menos una evidencia de imagen valida para la version final, salvo excepcion legal auditada.
+
+Verificacion publica:
+
+- Exponer endpoint de verificacion que retorne manifiesto, firmas, sello de tiempo y hash del objeto almacenado.
+- Permitir descarga del manifiesto para validacion independiente offline.
+- Publicar periodicamente raiz Merkle de manifiestos en un registro externo de transparencia (append-only).
+
+Controles anti-manipulacion:
+
+- Rechazar imagen si el hash recalculado al recibir no coincide con el hash declarado.
+- Rechazar reutilizacion de la misma imagen en distintas actas/versiones sin evento explicito de excepcion.
+- Marcar riesgo alto si hay discrepancia entre hash raw y hash de objeto recuperado de storage.
+- Generar alerta forense si faltan sello de tiempo o firma valida del manifiesto.
+
 ## 3. Multi-firma obligatoria
 
 - Umbral minimo: 3 miembros distintos.
@@ -100,6 +134,7 @@ Requisitos tecnicos:
 
 - Cifrado en reposo (PostgreSQL TDE o disco cifrado + claves gestionadas).
 - S3/object storage con cifrado server-side y politicas immutability lock.
+- Object lock legal (WORM) y versionado obligatorio para imagenes de acta y manifiestos criptograficos.
 - Separacion de PII y datos electorales en esquemas distintos.
 - Controles de acceso estrictos a evidencias de rostro e identidad (solo perfiles autorizados).
 
@@ -153,3 +188,4 @@ Agregar identificadores de responsabilidad:
 6. Simulacion de fraude interno con atribucion completa de responsabilidades.
 7. Validacion legal de admissibilidad forense de logs y evidencias.
 8. Validacion legal del texto y la firma de declaracion jurada por rol obligado.
+9. Prueba de verificacion externa de integridad de imagenes (hash, firma de manifiesto, sello de tiempo, root Merkle publicada).
