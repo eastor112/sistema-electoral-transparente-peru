@@ -113,7 +113,7 @@ Reglas:
 
 Esta versión del plan incorpora un endurecimiento técnico y operativo para cumplir simultáneamente con:
 
-- Eficiencia de procesamiento nacional y publicación en horas.
+- Eficiencia de procesamiento nacional y publicación en horas y no semanas.
 - Auditabilidad forense de extremo a extremo.
 - Cadena de responsabilidad trazable ante fraude en mesa.
 - Validación continua en cada compuerta del proceso.
@@ -124,7 +124,7 @@ Ejes transversales agregados:
 2. Motor de reglas antifraude en tiempo real (riesgo por mesa/acta).
 3. Modelo CQRS para lectura masiva de resultados preliminares.
 4. Runbook de investigación y judicialización de incidentes.
-5. Integridad criptográfica de imágenes de acta (doble hash, manifiesto firmado, sello de tiempo y storage inmutable).
+5. Integridad criptográfica de datos (doble hash, manifiesto firmado, sello de tiempo y storage inmutable).
 
 ## Comunidad y colaboración
 
