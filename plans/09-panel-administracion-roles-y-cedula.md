@@ -137,7 +137,7 @@ Acciones criticas auditables:
 3. Login en navegador con identidad verificada.
 4. Verificacion de asignacion o activacion formal para la mesa y dispositivo permitido.
 5. Carga de cedula congelada vigente.
-6. Captura digital guiada de votos.
+6. Registro digital guiado de resultados del acta (no del voto individual).
 7. Validacion y multi-firma.
 8. Impresion de acta.
 9. Firma fisica y re-subida de acta firmada.

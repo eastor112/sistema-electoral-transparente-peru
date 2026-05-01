@@ -29,7 +29,7 @@
 
 ### 1.2 Captura guiada
 
-1. Ingreso de votos por categoria.
+1. Transcripcion de resultados del acta fisica por categoria.
 2. Validaciones automaticas en tiempo real.
 3. Bloqueo de avance si hay inconsistencias.
 
@@ -116,7 +116,7 @@ Reglas adicionales:
 - Cambios de alto impacto exigen doble control humano (principio four-eyes).
 - Si riesgo >= umbral critico, la acta pasa a `BLOQUEADA` hasta revision.
 - Toda excepcion de flujo requiere `reason_code` y aprobacion trazable.
-- Toda captura de votos requiere cedula congelada de la eleccion vigente.
+- Toda transcripcion de resultados requiere cedula congelada de la eleccion vigente.
 
 ## 3.1 Validacion durante todo el proceso
 

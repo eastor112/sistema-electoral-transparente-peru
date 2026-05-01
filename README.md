@@ -178,7 +178,7 @@ Activacion local (una vez por clon):
 2. Jornada (operacion de mesa)
    - Miembros de mesa acceden solo a su mesa.
    - Si faltan titulares, se activa suplencia; si no alcanza, electores presentes pueden asumir la mesa con registro ad hoc auditado.
-   - Captura digital de votos y validacion en tiempo real.
+   - Transcripcion/digitalizacion de resultados del acta de mesa (el voto del elector sigue siendo en papel) con validacion en tiempo real.
    - Impresion de acta, firma fisica y re-subida de evidencia.
    - Captura de evidencia fotografica de miembros y validadores.
    - Miembros de mesa y personeros pueden reportar incidencias con descripcion y foto.
