@@ -11,3 +11,4 @@ python-multipart==0.0.20
 orjson==3.10.18
 tenacity==9.1.2
 structlog==25.3.0
+PyJWT==2.10.1

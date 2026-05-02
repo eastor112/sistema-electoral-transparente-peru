@@ -12,6 +12,7 @@ if str(SRC_PATH) not in sys.path:
 
 from election_system.core.config import settings
 from election_system.infrastructure.db.base import Base
+import election_system.infrastructure.db.models  # noqa: F401
 
 config = context.config
 
