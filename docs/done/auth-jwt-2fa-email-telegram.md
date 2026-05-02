@@ -173,7 +173,7 @@ Comportamiento de desarrollo:
 ## Archivos principales tocados
 
 - `src/election_system/api/v1/routes/auth.py`
-- `src/election_system/api/dependencies/auth.py`
+- `src/election_system/api/dependencies/auth.py` — actualizado en `roles-permisos-rbac-abac.md` para retornar `CurrentActor`
 - `src/election_system/application/services/auth_service.py`
 - `src/election_system/application/ports.py`
 - `src/election_system/core/security.py`
