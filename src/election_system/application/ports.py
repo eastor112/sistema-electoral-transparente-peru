@@ -1,7 +1,13 @@
 from datetime import datetime
 from typing import Protocol
 
-from election_system.domain.models import AuthUser, EmailOTPChallenge, OTPPurpose
+from election_system.domain.models import (
+    AuthUser,
+    EmailOTPChallenge,
+    OTPPurpose,
+    RoleType,
+    UserRole,
+)
 
 
 class MesaRepositoryPort(Protocol):
@@ -62,3 +68,32 @@ class AuthRepositoryPort(Protocol):
     async def consume_challenge(self, challenge_id: str) -> None: ...
 
     async def invalidate_user_challenges(self, *, user_id: str, purpose: OTPPurpose) -> None: ...
+
+
+class RoleRepositoryPort(Protocol):
+    async def get_active_roles_for_user(self, user_id: str) -> list[UserRole]: ...
+
+    async def get_role(self, user_role_id: str) -> UserRole | None: ...
+
+    async def assign_role(
+        self,
+        *,
+        user_id: str,
+        role_type: RoleType,
+        assigned_by: str,
+        mesa_id: str | None,
+        ubigeo: str | None,
+        jornada_id: str | None,
+    ) -> UserRole: ...
+
+    async def revoke_role(self, *, user_role_id: str, revoked_at: datetime) -> None: ...
+
+    async def list_roles(
+        self,
+        *,
+        user_id: str | None,
+        role_type: RoleType | None,
+        is_active: bool | None,
+        limit: int,
+        offset: int,
+    ) -> list[UserRole]: ...

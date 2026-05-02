@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from election_system.api.dependencies.auth import get_current_actor
+from election_system.api.dependencies.auth import CurrentActor, get_current_actor
 from election_system.application.services.auth_service import (
     AuthService,
     LoginChallengeResult,
@@ -165,12 +165,12 @@ async def verify_login(
 @router.post("/telegram/register-chat-id", response_model=RegisterTelegramChatIdResponse)
 async def register_telegram_chat_id(
     payload: RegisterTelegramChatIdRequest,
-    actor: Annotated[dict[str, str], Depends(get_current_actor)],
+    actor: Annotated[CurrentActor, Depends(get_current_actor)],
     service: Annotated[AuthService, Depends(_get_auth_service)],
 ) -> RegisterTelegramChatIdResponse:
     try:
         await service.register_telegram_chat_id(
-            user_id=actor["actor_id"],
+            user_id=actor.actor_id,
             telegram_chat_id=payload.telegram_chat_id,
         )
     except Exception as exc:
@@ -221,11 +221,11 @@ async def refresh_token(
 
 @router.get("/me", response_model=MeResponse)
 async def me(
-    actor: Annotated[dict[str, str], Depends(get_current_actor)],
+    actor: Annotated[CurrentActor, Depends(get_current_actor)],
     service: Annotated[AuthService, Depends(_get_auth_service)],
 ) -> MeResponse:
     try:
-        user = await service.me(user_id=actor["actor_id"])
+        user = await service.me(user_id=actor.actor_id)
     except Exception as exc:
         _raise_auth_http_error(exc)
     return MeResponse(

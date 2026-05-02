@@ -67,3 +67,36 @@ class EmailOTPChallengeORM(Base):
         nullable=False,
         server_default=func.now(),
     )
+
+
+class UserRoleORM(Base):
+    """Asignación de rol a un usuario del sistema con ámbito opcional (ABAC)."""
+
+    __tablename__ = "user_roles"
+
+    user_role_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("users.user_id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    role_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+
+    # Atributos de ámbito ABAC — NULL significa ámbito global
+    mesa_id: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
+    ubigeo: Mapped[str | None] = mapped_column(String(6), nullable=True, index=True)
+    jornada_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    assigned_by: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("users.user_id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    assigned_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

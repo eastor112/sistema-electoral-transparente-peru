@@ -14,8 +14,8 @@ class ChallengeInvalidError(AuthError):
     """OTP challenge does not exist or is no longer usable."""
 
 
-class ConflictError(AuthError):
-    """Resource conflict (e.g. duplicate email)."""
+class ConflictError(DomainError):
+    """Resource conflict (e.g. duplicate email or duplicate role assignment)."""
 
 
 class DeliveryChannelUnavailableError(AuthError):
