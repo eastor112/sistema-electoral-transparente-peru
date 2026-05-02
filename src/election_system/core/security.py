@@ -79,6 +79,13 @@ def verify_password(password: str, password_hash: str) -> bool:
     except ValueError:
         return False
 
+    # Reject hashes with suspiciously low or abusively high iteration counts.
+    # Low counts weaken the KDF; high counts are a DoS vector.
+    _min_rounds = 100_000
+    _max_rounds = 2_000_000
+    if not (_min_rounds <= rounds <= _max_rounds):
+        return False
+
     computed = hashlib.pbkdf2_hmac(
         "sha256",
         password.encode("utf-8"),
@@ -96,5 +103,13 @@ def generate_otp_code() -> str:
 
 
 def hash_otp_code(code: str) -> str:
-    payload = f"{settings.jwt_secret_key}:{code}".encode()
-    return hashlib.sha256(payload).hexdigest()
+    """Return a constant-length HMAC-SHA256 hex digest of the OTP code.
+
+    Uses a dedicated otp_hmac_key (separate from jwt_secret_key) so that
+    compromise of one secret does not affect the other.
+    """
+    return hmac.new(
+        settings.otp_hmac_key.encode(),
+        code.encode(),
+        hashlib.sha256,
+    ).hexdigest()

@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from election_system.core.security import decode_token
 from election_system.domain.models import Permission, RoleType, UserRole
 from election_system.infrastructure.db.session import get_db_session
+from election_system.infrastructure.repositories.auth_repository import AuthRepository
 from election_system.infrastructure.repositories.role_repository import RoleRepository
 
 
@@ -71,6 +72,13 @@ async def get_current_actor(
         )
 
     repo = RoleRepository(session)
+    auth_repo = AuthRepository(session)
+    user = await auth_repo.get_user_by_id(subject)
+    if user is None or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found or inactive",
+        )
     roles = await repo.get_active_roles_for_user(subject)
     return CurrentActor(actor_id=subject, roles=roles)
 

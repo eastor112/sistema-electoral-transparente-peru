@@ -1,5 +1,9 @@
-from pydantic import Field
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_ALLOWED_JWT_ALGORITHMS = frozenset({"HS256", "HS384", "HS512"})
+_INSECURE_JWT_DEFAULTS = frozenset({"replace-me", "secret", "changeme", ""})
+_DEV_ENVS = frozenset({"dev", "local", "development", "test"})
 
 
 class Settings(BaseSettings):
@@ -22,6 +26,7 @@ class Settings(BaseSettings):
     jwt_algorithm: str = Field(default="HS256")
     jwt_access_token_expire_minutes: int = Field(default=30)
     jwt_refresh_token_expire_minutes: int = Field(default=10080)
+    otp_hmac_key: str = Field(default="replace-me-otp")
 
     password_hash_iterations: int = Field(default=240000)
 
@@ -43,6 +48,37 @@ class Settings(BaseSettings):
     telegram_provider: str = Field(default="console")
     telegram_bot_token: str = Field(default="")
     telegram_api_base_url: str = Field(default="https://api.telegram.org")
+
+    @field_validator("jwt_algorithm")
+    @classmethod
+    def _validate_jwt_algorithm(cls, v: str) -> str:
+        if v not in _ALLOWED_JWT_ALGORITHMS:
+            raise ValueError(
+                f"jwt_algorithm must be one of {sorted(_ALLOWED_JWT_ALGORITHMS)}, got {v!r}"
+            )
+        return v
+
+    @model_validator(mode="after")
+    def _validate_secrets(self) -> "Settings":
+        is_dev = self.app_env.lower() in _DEV_ENVS
+        if not is_dev and self.jwt_secret_key in _INSECURE_JWT_DEFAULTS:
+            raise ValueError(
+                "jwt_secret_key must be set to a strong secret in non-development environments. "
+                "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\""
+            )
+        if not is_dev and len(self.jwt_secret_key) < 32:
+            raise ValueError(
+                "jwt_secret_key must be at least 32 characters in non-development environments."
+            )
+        if not is_dev and self.otp_hmac_key in _INSECURE_JWT_DEFAULTS:
+            raise ValueError(
+                "otp_hmac_key must be set to a strong secret in non-development environments."
+            )
+        if not is_dev and len(self.otp_hmac_key) < 32:
+            raise ValueError(
+                "otp_hmac_key must be at least 32 characters in non-development environments."
+            )
+        return self
 
     @property
     def database_url(self) -> str:

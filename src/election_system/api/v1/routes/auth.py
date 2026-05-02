@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Annotated, Literal, NoReturn
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from election_system.api.dependencies.auth import CurrentActor, get_current_actor
@@ -26,7 +26,7 @@ router = APIRouter(prefix="/auth")
 
 
 class RegisterRequest(BaseModel):
-    email: str = Field(min_length=5, max_length=320)
+    email: EmailStr
     password: str = Field(min_length=8, max_length=128)
     full_name: str | None = Field(default=None, max_length=120)
     telegram_chat_id: str | None = Field(default=None, min_length=3, max_length=64)
@@ -38,7 +38,7 @@ class RegisterResponse(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    email: str = Field(min_length=5, max_length=320)
+    email: EmailStr
     password: str = Field(min_length=8, max_length=128)
     channel: Literal["email", "telegram"] = "email"
 
@@ -64,11 +64,11 @@ class RefreshTokenRequest(BaseModel):
 
 
 class PasswordRecoveryRequest(BaseModel):
-    email: str = Field(min_length=5, max_length=320)
+    email: EmailStr
 
 
 class PasswordRecoveryConfirmRequest(BaseModel):
-    email: str = Field(min_length=5, max_length=320)
+    email: EmailStr
     challenge_id: str = Field(min_length=36, max_length=36)
     code: str = Field(min_length=4, max_length=12)
     new_password: str = Field(min_length=8, max_length=128)

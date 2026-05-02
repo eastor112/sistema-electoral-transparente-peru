@@ -88,14 +88,16 @@ class AuthService:
         if not verify_password(password, user.password_hash):
             raise InvalidCredentialsError("Invalid credentials")
 
+        # Validate channel availability BEFORE mutating any state.
+        if channel == "telegram" and user.telegram_chat_id is None:
+            raise DeliveryChannelUnavailableError("User does not have Telegram configured")
+
         await self._repository.invalidate_user_challenges(user_id=user.user_id, purpose=OTPPurpose.LOGIN)
         challenge, code = await self._create_email_challenge(user_id=user.user_id, purpose=OTPPurpose.LOGIN)
 
         if channel == "telegram":
-            if user.telegram_chat_id is None:
-                raise DeliveryChannelUnavailableError("User does not have Telegram configured")
             await self._telegram_sender.send_message(
-                chat_id=user.telegram_chat_id,
+                chat_id=user.telegram_chat_id,  # type: ignore[arg-type]  # checked above
                 text=(
                     "Election System: tu codigo de acceso es "
                     f"{code}. Vence en {settings.otp_ttl_minutes} minutos."
