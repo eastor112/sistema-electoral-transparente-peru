@@ -14,9 +14,10 @@ from election_system.core.exceptions import (
     NotFoundError,
     StorageError,
 )
+from election_system.domain.models import PartidoPolitico
 from election_system.infrastructure.db.session import get_db_session
 from election_system.infrastructure.repositories.partido_repository import PartidoRepository
-from election_system.infrastructure.storage.r2_client import get_r2_adapter
+from election_system.infrastructure.storage.r2_client import MAX_UPLOAD_BYTES, get_r2_adapter
 
 router = APIRouter(prefix="/partidos")
 
@@ -106,7 +107,12 @@ async def upload_simbolo(
     service: Annotated[PartidoService, Depends(_build_service)],
     file: Annotated[UploadFile, File(description="Imagen del símbolo (JPEG/PNG/WebP/SVG, máx 5 MB)")],
 ) -> SimboloUploadResponse:
-    data = await file.read()
+    data = await file.read(MAX_UPLOAD_BYTES + 1)
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"El archivo supera el tamaño máximo de {MAX_UPLOAD_BYTES // 1024 // 1024} MB.",
+        )
     content_type = file.content_type or "application/octet-stream"
     try:
         url = await service.upload_simbolo(
@@ -134,10 +140,7 @@ async def upload_simbolo(
 # ---------------------------------------------------------------------------
 
 
-def _to_response(partido: object) -> PartidoResponse:
-    from election_system.domain.models import PartidoPolitico
-
-    assert isinstance(partido, PartidoPolitico)
+def _to_response(partido: PartidoPolitico) -> PartidoResponse:
     return PartidoResponse(
         partido_id=partido.partido_id,
         nombre=partido.nombre,

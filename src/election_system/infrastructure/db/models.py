@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import ARRAY
@@ -126,7 +126,7 @@ class ProcesoElectoralORM(Base):
 
     proceso_id: Mapped[str] = mapped_column(String(36), primary_key=True)
     nombre: Mapped[str] = mapped_column(String(200), nullable=False)
-    fecha_jornada: Mapped[datetime] = mapped_column(Date, nullable=False)
+    fecha_jornada: Mapped[date] = mapped_column(Date, nullable=False)
     tipos_cargo: Mapped[list[str]] = mapped_column(ARRAY(String(64)), nullable=False)
     estado: Mapped[str] = mapped_column(String(32), nullable=False, default="CONFIGURACION")
     created_at: Mapped[datetime] = mapped_column(

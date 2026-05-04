@@ -1,6 +1,12 @@
 """Use cases for managing procesos electorales, listas and candidatos."""
 
-from election_system.application.ports import ProcesoRepositoryPort, StoragePort
+from dataclasses import dataclass
+
+from election_system.application.ports import (
+    PartidoRepositoryPort,
+    ProcesoRepositoryPort,
+    StoragePort,
+)
 from election_system.core.exceptions import ConflictError, NotFoundError
 from election_system.domain.models import (
     Candidato,
@@ -11,6 +17,39 @@ from election_system.domain.models import (
     cargo_tiene_voto_preferencial,
 )
 
+# ---------------------------------------------------------------------------
+# View models (application layer — enriched read projections, not domain)
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class PartidoResumen:
+    partido_id: str
+    nombre: str
+    numero: int
+    simbolo_url: str | None
+
+
+@dataclass(frozen=True)
+class ListaConPartido:
+    lista_id: str
+    proceso_id: str
+    partido: PartidoResumen
+    tipo_cargo: TipoCargo
+    tiene_voto_preferencial: bool
+    candidatos: list[Candidato]
+
+
+@dataclass(frozen=True)
+class CedulaView:
+    proceso: ProcesoElectoral
+    listas: list[ListaConPartido]
+
+
+# ---------------------------------------------------------------------------
+# Service
+# ---------------------------------------------------------------------------
+
 
 class CedulaService:
     def __init__(
@@ -18,9 +57,11 @@ class CedulaService:
         *,
         repository: ProcesoRepositoryPort,
         storage: StoragePort,
+        partido_repository: PartidoRepositoryPort,
     ) -> None:
         self._repo = repository
         self._storage = storage
+        self._partido_repo = partido_repository
 
     # ------------------------------------------------------------------
     # Procesos
@@ -48,9 +89,7 @@ class CedulaService:
             raise NotFoundError(f"Proceso {proceso_id!r} no encontrado.")
         return proceso
 
-    async def update_estado(
-        self, *, proceso_id: str, estado: EstadoProceso
-    ) -> None:
+    async def update_estado(self, *, proceso_id: str, estado: EstadoProceso) -> None:
         await self.get_proceso(proceso_id)
         await self._repo.update_estado(proceso_id=proceso_id, estado=estado)
 
@@ -71,10 +110,7 @@ class CedulaService:
                 f"El tipo de cargo {tipo_cargo!r} no pertenece al proceso {proceso_id!r}."
             )
         listas = await self._repo.list_listas(proceso_id)
-        if any(
-            la.partido_id == partido_id and la.tipo_cargo == tipo_cargo
-            for la in listas
-        ):
+        if any(la.partido_id == partido_id and la.tipo_cargo == tipo_cargo for la in listas):
             raise ConflictError(
                 f"El partido {partido_id!r} ya tiene una lista para {tipo_cargo!r} "
                 f"en el proceso {proceso_id!r}."
@@ -102,12 +138,16 @@ class CedulaService:
     async def add_candidato(
         self,
         *,
+        proceso_id: str,
         lista_id: str,
         nombre_completo: str,
         orden: int,
         es_titular: bool,
     ) -> Candidato:
-        await self.get_lista(lista_id)
+        lista = await self.get_lista(lista_id)
+        # IDOR guard: ensure the lista belongs to the declared proceso
+        if lista.proceso_id != proceso_id:
+            raise NotFoundError(f"Lista {lista_id!r} no encontrada.")
         candidatos = await self._repo.list_candidatos(lista_id)
         if any(c.orden == orden and c.es_titular == es_titular for c in candidatos):
             kind = "titular" if es_titular else "suplente"
@@ -127,9 +167,14 @@ class CedulaService:
             raise NotFoundError(f"Candidato {candidato_id!r} no encontrado.")
         return candidato
 
-    async def list_candidatos(self, lista_id: str) -> list[Candidato]:
-        await self.get_lista(lista_id)
-        return await self._repo.list_candidatos(lista_id)
+    async def list_candidatos(
+        self, *, lista_id: str, proceso_id: str | None = None
+    ) -> list[Candidato]:
+        lista = await self.get_lista(lista_id)
+        # IDOR guard: when proceso_id provided, verify ownership
+        if proceso_id is not None and lista.proceso_id != proceso_id:
+            raise NotFoundError(f"Lista {lista_id!r} no encontrada.")
+        return await self._repo.list_candidatos(lista.lista_id)
 
     async def upload_foto_candidato(
         self,
@@ -146,39 +191,41 @@ class CedulaService:
             content_type=content_type,
             original_filename=original_filename,
         )
-        await self._repo.update_candidato_foto_url(
-            candidato_id=candidato_id, foto_url=url
-        )
+        await self._repo.update_candidato_foto_url(candidato_id=candidato_id, foto_url=url)
         return url
 
     # ------------------------------------------------------------------
     # Vista de cédula completa
     # ------------------------------------------------------------------
 
-    async def get_cedula(self, proceso_id: str) -> "CedulaView":
+    async def get_cedula(self, proceso_id: str) -> CedulaView:
         proceso = await self.get_proceso(proceso_id)
         listas = await self._repo.list_listas(proceso_id)
-        listas_con_candidatos: list[ListaElectoral] = []
-        for lista in listas:
-            candidatos = await self._repo.list_candidatos(lista.lista_id)
 
-            listas_con_candidatos.append(
-                ListaElectoral(
+        # Batch-fetch all parties once to avoid N+1 queries
+        all_partidos = await self._partido_repo.list_all(only_active=False)
+        partido_map = {p.partido_id: p for p in all_partidos}
+
+        listas_enriquecidas: list[ListaConPartido] = []
+        for lista in listas:
+            # TODO: replace individual candidato queries with a batch query
+            #       keyed on proceso_id when load requires it.
+            candidatos = await self._repo.list_candidatos(lista.lista_id)
+            partido = partido_map.get(lista.partido_id)
+            listas_enriquecidas.append(
+                ListaConPartido(
                     lista_id=lista.lista_id,
                     proceso_id=lista.proceso_id,
-                    partido_id=lista.partido_id,
+                    partido=PartidoResumen(
+                        partido_id=lista.partido_id,
+                        nombre=partido.nombre if partido else "—",
+                        numero=partido.numero if partido else 0,
+                        simbolo_url=partido.simbolo_url if partido else None,
+                    ),
                     tipo_cargo=lista.tipo_cargo,
                     tiene_voto_preferencial=cargo_tiene_voto_preferencial(lista.tipo_cargo),
-                    candidatos=sorted(candidatos, key=lambda c: (c.es_titular, c.orden)),
+                    # Titulares first: not True == False < True == not False
+                    candidatos=sorted(candidatos, key=lambda c: (not c.es_titular, c.orden)),
                 )
             )
-        return CedulaView(proceso=proceso, listas=listas_con_candidatos)
-
-
-from dataclasses import dataclass  # noqa: E402
-
-
-@dataclass(frozen=True)
-class CedulaView:
-    proceso: ProcesoElectoral
-    listas: list[ListaElectoral]
+        return CedulaView(proceso=proceso, listas=listas_enriquecidas)

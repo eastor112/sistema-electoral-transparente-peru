@@ -56,6 +56,11 @@ class Settings(BaseSettings):
     r2_bucket_name: str = Field(default="election-assets")
     r2_public_url: str = Field(default="")
 
+    # CORS — list of allowed origins (JSON array in .env)
+    cors_allowed_origins: list[str] = Field(
+        default=["http://localhost:3000", "http://localhost:5173"]
+    )
+
     @field_validator("jwt_algorithm")
     @classmethod
     def _validate_jwt_algorithm(cls, v: str) -> str:

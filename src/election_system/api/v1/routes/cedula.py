@@ -1,6 +1,6 @@
 """Endpoint de vista de cédula electoral completa."""
 
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -11,6 +11,7 @@ from election_system.application.services.cedula_service import CedulaService
 from election_system.core.exceptions import NotFoundError
 from election_system.domain.models import EstadoProceso, TipoCargo
 from election_system.infrastructure.db.session import get_db_session
+from election_system.infrastructure.repositories.partido_repository import PartidoRepository
 from election_system.infrastructure.repositories.proceso_repository import ProcesoRepository
 from election_system.infrastructure.storage.r2_client import get_r2_adapter
 
@@ -30,9 +31,16 @@ class CandidatoSchema(BaseModel):
     foto_url: str | None
 
 
+class PartidoSchema(BaseModel):
+    partido_id: str
+    nombre: str
+    numero: int
+    simbolo_url: str | None
+
+
 class ListaSchema(BaseModel):
     lista_id: str
-    partido_id: str
+    partido: PartidoSchema
     tipo_cargo: TipoCargo
     tiene_voto_preferencial: bool
     candidatos: list[CandidatoSchema]
@@ -59,6 +67,7 @@ def _build_service(
     return CedulaService(
         repository=ProcesoRepository(session),
         storage=get_r2_adapter(),
+        partido_repository=PartidoRepository(session),
     )
 
 
@@ -84,7 +93,12 @@ async def get_cedula(
     listas_out = [
         ListaSchema(
             lista_id=la.lista_id,
-            partido_id=la.partido_id,
+            partido=PartidoSchema(
+                partido_id=la.partido.partido_id,
+                nombre=la.partido.nombre,
+                numero=la.partido.numero,
+                simbolo_url=la.partido.simbolo_url,
+            ),
             tipo_cargo=la.tipo_cargo,
             tiene_voto_preferencial=la.tiene_voto_preferencial,
             candidatos=[
@@ -101,9 +115,6 @@ async def get_cedula(
         for la in view.listas
     ]
 
-    from datetime import UTC
-    from datetime import datetime as dt
-
     return CedulaResponse(
         proceso_id=view.proceso.proceso_id,
         nombre=view.proceso.nombre,
@@ -111,5 +122,5 @@ async def get_cedula(
         estado=view.proceso.estado,
         tipos_cargo=view.proceso.tipos_cargo,
         listas=listas_out,
-        generated_at=dt.now(UTC),
+        generated_at=datetime.now(UTC),
     )

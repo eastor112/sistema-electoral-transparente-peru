@@ -9,8 +9,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from election_system.application.services.cedula_service import CedulaService
 from election_system.core.exceptions import ConflictError, NotFoundError
-from election_system.domain.models import EstadoProceso, TipoCargo
+from election_system.domain.models import (
+    Candidato,
+    EstadoProceso,
+    ListaElectoral,
+    ProcesoElectoral,
+    TipoCargo,
+)
 from election_system.infrastructure.db.session import get_db_session
+from election_system.infrastructure.repositories.partido_repository import PartidoRepository
 from election_system.infrastructure.repositories.proceso_repository import ProcesoRepository
 from election_system.infrastructure.storage.r2_client import get_r2_adapter
 
@@ -80,6 +87,7 @@ def _build_service(
     return CedulaService(
         repository=ProcesoRepository(session),
         storage=get_r2_adapter(),
+        partido_repository=PartidoRepository(session),
     )
 
 
@@ -191,6 +199,7 @@ async def add_candidato(
 ) -> CandidatoResponse:
     try:
         candidato = await service.add_candidato(
+            proceso_id=proceso_id,
             lista_id=lista_id,
             nombre_completo=body.nombre_completo,
             orden=body.orden,
@@ -213,7 +222,7 @@ async def list_candidatos(
     service: Annotated[CedulaService, Depends(_build_service)],
 ) -> list[CandidatoResponse]:
     try:
-        candidatos = await service.list_candidatos(lista_id)
+        candidatos = await service.list_candidatos(lista_id=lista_id, proceso_id=proceso_id)
     except NotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     return [_to_candidato_response(c) for c in candidatos]
@@ -224,10 +233,7 @@ async def list_candidatos(
 # ---------------------------------------------------------------------------
 
 
-def _to_proceso_response(proceso: object) -> ProcesoResponse:
-    from election_system.domain.models import ProcesoElectoral
-
-    assert isinstance(proceso, ProcesoElectoral)
+def _to_proceso_response(proceso: ProcesoElectoral) -> ProcesoResponse:
     return ProcesoResponse(
         proceso_id=proceso.proceso_id,
         nombre=proceso.nombre,
@@ -238,10 +244,7 @@ def _to_proceso_response(proceso: object) -> ProcesoResponse:
     )
 
 
-def _to_lista_response(lista: object) -> ListaResponse:
-    from election_system.domain.models import ListaElectoral
-
-    assert isinstance(lista, ListaElectoral)
+def _to_lista_response(lista: ListaElectoral) -> ListaResponse:
     return ListaResponse(
         lista_id=lista.lista_id,
         proceso_id=lista.proceso_id,
@@ -251,10 +254,7 @@ def _to_lista_response(lista: object) -> ListaResponse:
     )
 
 
-def _to_candidato_response(candidato: object) -> CandidatoResponse:
-    from election_system.domain.models import Candidato
-
-    assert isinstance(candidato, Candidato)
+def _to_candidato_response(candidato: Candidato) -> CandidatoResponse:
     return CandidatoResponse(
         candidato_id=candidato.candidato_id,
         lista_id=candidato.lista_id,

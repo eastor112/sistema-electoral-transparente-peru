@@ -10,10 +10,12 @@ import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 
 from election_system.core.config import settings
-from election_system.core.exceptions import StorageError
+from election_system.core.exceptions import InvalidAssetError, StorageError
 
 if TYPE_CHECKING:
     from mypy_boto3_s3 import S3Client
+
+MAX_UPLOAD_BYTES: int = 5 * 1024 * 1024  # 5 MB
 
 _ALLOWED_CONTENT_TYPES: frozenset[str] = frozenset(
     {
@@ -23,7 +25,23 @@ _ALLOWED_CONTENT_TYPES: frozenset[str] = frozenset(
         "image/svg+xml",
     }
 )
-_MAX_BYTES: int = 5 * 1024 * 1024  # 5 MB
+
+
+def _check_magic_bytes(data: bytes, content_type: str) -> bool:
+    """Verify file content matches the declared content type via magic bytes.
+
+    Prevents content-type spoofing attacks (e.g. disguising HTML/JS as JPEG).
+    """
+    if content_type == "image/jpeg":
+        return data[:3] == b"\xff\xd8\xff"
+    if content_type == "image/png":
+        return data[:8] == b"\x89PNG\r\n\x1a\n"
+    if content_type == "image/webp":
+        return len(data) >= 12 and data[:4] == b"RIFF" and data[8:12] == b"WEBP"
+    if content_type == "image/svg+xml":
+        snippet = data[:256].lstrip()
+        return snippet.startswith((b"<svg", b"<?xml", b"<SVG"))
+    return False
 
 
 def _build_s3_client() -> "S3Client":
@@ -69,20 +87,21 @@ class R2StorageAdapter:
     ) -> str:
         """Upload image bytes to R2 and return the public URL.
 
-        Validates content type and size before uploading.
+        Validates content type, size, and magic bytes before uploading.
         """
         if content_type not in _ALLOWED_CONTENT_TYPES:
-            from election_system.core.exceptions import InvalidAssetError
-
             raise InvalidAssetError(
                 f"Content type {content_type!r} is not allowed. "
                 f"Accepted: {sorted(_ALLOWED_CONTENT_TYPES)}"
             )
-        if len(data) > _MAX_BYTES:
-            from election_system.core.exceptions import InvalidAssetError
-
+        if len(data) > MAX_UPLOAD_BYTES:
             raise InvalidAssetError(
-                f"File exceeds maximum allowed size of {_MAX_BYTES // 1024 // 1024} MB."
+                f"File exceeds maximum allowed size of {MAX_UPLOAD_BYTES // 1024 // 1024} MB."
+            )
+        if not _check_magic_bytes(data, content_type):
+            raise InvalidAssetError(
+                "File content does not match the declared content type. "
+                "Ensure the file is a valid image."
             )
 
         ext = _ext_from_content_type(content_type, original_filename)

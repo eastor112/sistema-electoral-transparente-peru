@@ -9,8 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from election_system.application.services.cedula_service import CedulaService
 from election_system.core.exceptions import InvalidAssetError, NotFoundError, StorageError
 from election_system.infrastructure.db.session import get_db_session
+from election_system.infrastructure.repositories.partido_repository import PartidoRepository
 from election_system.infrastructure.repositories.proceso_repository import ProcesoRepository
-from election_system.infrastructure.storage.r2_client import get_r2_adapter
+from election_system.infrastructure.storage.r2_client import MAX_UPLOAD_BYTES, get_r2_adapter
 
 router = APIRouter(prefix="/candidatos")
 
@@ -26,6 +27,7 @@ def _build_service(
     return CedulaService(
         repository=ProcesoRepository(session),
         storage=get_r2_adapter(),
+        partido_repository=PartidoRepository(session),
     )
 
 
@@ -39,7 +41,12 @@ async def upload_foto(
     service: Annotated[CedulaService, Depends(_build_service)],
     file: Annotated[UploadFile, File(description="Foto del candidato (JPEG/PNG/WebP, máx 5 MB)")],
 ) -> FotoUploadResponse:
-    data = await file.read()
+    data = await file.read(MAX_UPLOAD_BYTES + 1)
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"El archivo supera el tamaño máximo de {MAX_UPLOAD_BYTES // 1024 // 1024} MB.",
+        )
     content_type = file.content_type or "application/octet-stream"
     try:
         url = await service.upload_foto_candidato(
