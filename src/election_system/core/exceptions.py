@@ -20,3 +20,15 @@ class ConflictError(DomainError):
 
 class DeliveryChannelUnavailableError(AuthError):
     """Requested second-factor delivery channel is not available for this user."""
+
+
+class NotFoundError(DomainError):
+    """Requested resource does not exist."""
+
+
+class StorageError(DomainError):
+    """File storage operation failed."""
+
+
+class InvalidAssetError(DomainError):
+    """Uploaded file is not an accepted image format or exceeds size limit."""

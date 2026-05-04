@@ -49,6 +49,13 @@ class Settings(BaseSettings):
     telegram_bot_token: str = Field(default="")
     telegram_api_base_url: str = Field(default="https://api.telegram.org")
 
+    # Cloudflare R2 (S3-compatible) storage
+    r2_endpoint_url: str = Field(default="")
+    r2_access_key_id: str = Field(default="")
+    r2_secret_access_key: str = Field(default="")
+    r2_bucket_name: str = Field(default="election-assets")
+    r2_public_url: str = Field(default="")
+
     @field_validator("jwt_algorithm")
     @classmethod
     def _validate_jwt_algorithm(cls, v: str) -> str:

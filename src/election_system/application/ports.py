@@ -3,9 +3,15 @@ from typing import Protocol
 
 from election_system.domain.models import (
     AuthUser,
+    Candidato,
     EmailOTPChallenge,
+    EstadoProceso,
+    ListaElectoral,
     OTPPurpose,
+    PartidoPolitico,
+    ProcesoElectoral,
     RoleType,
+    TipoCargo,
     UserRole,
 )
 
@@ -97,3 +103,78 @@ class RoleRepositoryPort(Protocol):
         limit: int,
         offset: int,
     ) -> list[UserRole]: ...
+
+
+# ---------------------------------------------------------------------------
+# Cédula Electoral ports
+# ---------------------------------------------------------------------------
+
+
+class StoragePort(Protocol):
+    async def upload_image(
+        self,
+        *,
+        folder: str,
+        data: bytes,
+        content_type: str,
+        original_filename: str,
+    ) -> str: ...
+
+
+class PartidoRepositoryPort(Protocol):
+    async def create(
+        self, *, nombre: str, numero: int
+    ) -> PartidoPolitico: ...
+
+    async def get_by_id(self, partido_id: str) -> PartidoPolitico | None: ...
+
+    async def list_all(self, *, only_active: bool) -> list[PartidoPolitico]: ...
+
+    async def update_simbolo_url(self, *, partido_id: str, simbolo_url: str) -> None: ...
+
+
+class ProcesoRepositoryPort(Protocol):
+    async def create(
+        self,
+        *,
+        nombre: str,
+        fecha_jornada: str,
+        tipos_cargo: list[TipoCargo],
+    ) -> ProcesoElectoral: ...
+
+    async def get_by_id(self, proceso_id: str) -> ProcesoElectoral | None: ...
+
+    async def list_all(self) -> list[ProcesoElectoral]: ...
+
+    async def update_estado(
+        self, *, proceso_id: str, estado: EstadoProceso
+    ) -> None: ...
+
+    async def create_lista(
+        self,
+        *,
+        proceso_id: str,
+        partido_id: str,
+        tipo_cargo: TipoCargo,
+    ) -> ListaElectoral: ...
+
+    async def get_lista(self, lista_id: str) -> ListaElectoral | None: ...
+
+    async def list_listas(self, proceso_id: str) -> list[ListaElectoral]: ...
+
+    async def add_candidato(
+        self,
+        *,
+        lista_id: str,
+        nombre_completo: str,
+        orden: int,
+        es_titular: bool,
+    ) -> Candidato: ...
+
+    async def get_candidato(self, candidato_id: str) -> Candidato | None: ...
+
+    async def list_candidatos(self, lista_id: str) -> list[Candidato]: ...
+
+    async def update_candidato_foto_url(
+        self, *, candidato_id: str, foto_url: str
+    ) -> None: ...

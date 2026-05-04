@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
 
 from election_system.infrastructure.db.base import Base
@@ -100,3 +101,76 @@ class UserRoleORM(Base):
         server_default=func.now(),
     )
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+# ---------------------------------------------------------------------------
+# Cédula Electoral — partidos, procesos y listas
+# ---------------------------------------------------------------------------
+
+
+class PartidoPoliticoORM(Base):
+    __tablename__ = "partidos_politicos"
+
+    partido_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    nombre: Mapped[str] = mapped_column(String(200), nullable=False, unique=True)
+    numero: Mapped[int] = mapped_column(Integer, nullable=False, unique=True)
+    simbolo_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class ProcesoElectoralORM(Base):
+    __tablename__ = "procesos_electorales"
+
+    proceso_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    nombre: Mapped[str] = mapped_column(String(200), nullable=False)
+    fecha_jornada: Mapped[datetime] = mapped_column(Date, nullable=False)
+    tipos_cargo: Mapped[list[str]] = mapped_column(ARRAY(String(64)), nullable=False)
+    estado: Mapped[str] = mapped_column(String(32), nullable=False, default="CONFIGURACION")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class ListaElectoralORM(Base):
+    __tablename__ = "listas_electorales"
+
+    lista_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    proceso_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("procesos_electorales.proceso_id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    partido_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("partidos_politicos.partido_id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+    tipo_cargo: Mapped[str] = mapped_column(String(64), nullable=False)
+    tiene_voto_preferencial: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class CandidatoORM(Base):
+    __tablename__ = "candidatos"
+
+    candidato_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    lista_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("listas_electorales.lista_id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    nombre_completo: Mapped[str] = mapped_column(String(200), nullable=False)
+    orden: Mapped[int] = mapped_column(Integer, nullable=False)
+    es_titular: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    foto_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )

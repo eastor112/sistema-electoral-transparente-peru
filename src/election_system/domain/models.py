@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from datetime import datetime
+from dataclasses import dataclass, field
+from datetime import date, datetime
 from enum import StrEnum
 
 
@@ -235,3 +235,80 @@ class EmailOTPChallenge:
     max_attempts: int
     expires_at: datetime
     consumed_at: datetime | None
+
+
+# ---------------------------------------------------------------------------
+# Cédula Electoral — catálogo de partidos, procesos y listas
+# ---------------------------------------------------------------------------
+
+
+class TipoCargo(StrEnum):
+    """Tipos de cargo que aparecen en la cédula electoral peruana."""
+
+    PRESIDENTE_VICEPRESIDENTE = "PRESIDENTE_VICEPRESIDENTE"
+    SENADOR_NACIONAL = "SENADOR_NACIONAL"
+    SENADOR_UNIVERSO = "SENADOR_UNIVERSO"
+    DIPUTADO_UNIVERSO = "DIPUTADO_UNIVERSO"
+    PARLAMENTO_ANDINO = "PARLAMENTO_ANDINO"
+
+
+class EstadoProceso(StrEnum):
+    CONFIGURACION = "CONFIGURACION"
+    PUBLICADO = "PUBLICADO"
+    EN_CURSO = "EN_CURSO"
+    CERRADO = "CERRADO"
+
+
+_CARGOS_CON_VOTO_PREFERENCIAL: frozenset[TipoCargo] = frozenset(
+    {
+        TipoCargo.SENADOR_NACIONAL,
+        TipoCargo.SENADOR_UNIVERSO,
+        TipoCargo.DIPUTADO_UNIVERSO,
+        TipoCargo.PARLAMENTO_ANDINO,
+    }
+)
+
+
+def cargo_tiene_voto_preferencial(tipo: TipoCargo) -> bool:
+    return tipo in _CARGOS_CON_VOTO_PREFERENCIAL
+
+
+@dataclass(frozen=True)
+class PartidoPolitico:
+    partido_id: str
+    nombre: str
+    numero: int
+    simbolo_url: str | None
+    activo: bool
+    created_at: datetime
+
+
+@dataclass(frozen=True)
+class ProcesoElectoral:
+    proceso_id: str
+    nombre: str
+    fecha_jornada: date
+    tipos_cargo: list[TipoCargo]
+    estado: EstadoProceso
+    created_at: datetime
+
+
+@dataclass(frozen=True)
+class Candidato:
+    candidato_id: str
+    lista_id: str
+    nombre_completo: str
+    orden: int
+    es_titular: bool
+    foto_url: str | None
+    created_at: datetime
+
+
+@dataclass(frozen=True)
+class ListaElectoral:
+    lista_id: str
+    proceso_id: str
+    partido_id: str
+    tipo_cargo: TipoCargo
+    tiene_voto_preferencial: bool
+    candidatos: list[Candidato] = field(default_factory=list)
